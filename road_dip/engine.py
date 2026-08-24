@@ -54,6 +54,14 @@ def output_directory(config: dict) -> Path:
     return (root / config["experiment"]["name"]).expanduser().resolve()
 
 
+def safe_cross_entropy(logits: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    """Return a differentiable zero when an episodic crop has no valid labels."""
+
+    if not torch.any(target != 255):
+        return logits.sum() * 0.0
+    return F.cross_entropy(logits, target, ignore_index=255)
+
+
 def _make_eval_dataset(config: dict, support: bool) -> LabeledTargetDataset:
     data_cfg = config["data"]
     prefix = "support" if support else "val"
@@ -251,8 +259,8 @@ def train(config: dict, resume: str | None = None) -> Path:
             support_logits = F.interpolate(
                 support_logits, support_label.shape[-2:], mode="bilinear", align_corners=False
             )
-            source_loss = F.cross_entropy(source_logits, source_label, ignore_index=255)
-            support_loss = F.cross_entropy(support_logits, support_label, ignore_index=255)
+            source_loss = safe_cross_entropy(source_logits, source_label)
+            support_loss = safe_cross_entropy(support_logits, support_label)
             loss = (source_loss + support_weight * support_loss) / grad_accum
 
         scaler.scale(loss).backward()

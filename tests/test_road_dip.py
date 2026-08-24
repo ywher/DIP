@@ -5,6 +5,7 @@ import torch
 
 from road_dip.config import load_config, validate_config
 from road_dip.data import remap_pair_labels
+from road_dip.engine import safe_cross_entropy
 from road_dip.models.prototype import PrototypeBank, build_prototypes, prototype_logits
 
 
@@ -12,6 +13,17 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class RoadDIPTests(unittest.TestCase):
+    def test_safe_cross_entropy_handles_all_ignore_crop(self):
+        logits = torch.randn(1, 3, 4, 4, requires_grad=True)
+        target = torch.full((1, 4, 4), 255, dtype=torch.long)
+
+        loss = safe_cross_entropy(logits, target)
+        loss.backward()
+
+        self.assertEqual(loss.item(), 0.0)
+        self.assertTrue(torch.isfinite(logits.grad).all())
+        self.assertEqual(torch.count_nonzero(logits.grad).item(), 0)
+
     def test_all_road_configs_are_valid(self):
         configs = sorted((REPO_ROOT / "configs" / "road").glob("*/*.yaml"))
         configs = [path for path in configs if path.parent.name != "_base_"]
