@@ -1,0 +1,20 @@
+base: ../_base_/vfm.yaml
+experiment:
+  name: dip_dinov3b_rein_hrda_synthia2cityscapes_1_64
+  task: synthia2cityscapes
+data:
+  source_root: ../../../data/synthia
+  source_list: ../../../lists/road/synthia_train.txt
+  source_kind: synthia
+  source_label_space: synthia_raw
+  support_root: ../../../data/cityscapes
+  support_list: ../../../lists/road/synthia2cityscapes_1_64_support.txt
+  support_kind: paired
+  support_label_space: trainid
+  val_root: ../../../data/cityscapes
+  val_list: ../../../lists/road/cityscapes_val.txt
+  val_kind: paired
+  val_label_space: trainid
+  prototype_resize: [1024, 2048]
+  eval_resize: [1024, 2048]
+

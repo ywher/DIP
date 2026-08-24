@@ -1,0 +1,20 @@
+base: ../_base_/native.yaml
+experiment:
+  name: dip_native_r101_cityscapes2muses_1_64
+  task: cityscapes2muses
+data:
+  source_root: ../../../data/cityscapes
+  source_list: ../../../lists/road/cityscapes_source_train.txt
+  source_kind: cityscapes_source
+  source_label_space: trainid
+  support_root: ../../../data/muses
+  support_list: ../../../lists/road/cityscapes2muses_1_64_support.txt
+  support_kind: paired
+  support_label_space: trainid
+  val_root: ../../../data/muses
+  val_list: ../../../lists/road/muses_val.txt
+  val_kind: paired
+  val_label_space: trainid
+  prototype_resize: [1024, 2048]
+  eval_resize: [1024, 2048]
+

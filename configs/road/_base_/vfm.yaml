@@ -1,0 +1,26 @@
+experiment:
+  output_root: ../../../outputs/road
+  seed: 0
+model:
+  type: dinov3_base_rein_hrda
+  pretrained: ../../../pretrained/dinov3/dinov3_vitb16.pth
+  hr_crop_size: [512, 512]
+  prototype_scale: 20.0
+train:
+  max_iters: 40000
+  crop_size: [1024, 1024]
+  scale_range: [0.5, 2.0]
+  flip_probability: 0.5
+  color_jitter: 0.2
+  blur_probability: 0.5
+  workers: 4
+  base_lr: 0.0001
+  warmup_iters: 1500
+  power: 1.0
+  support_loss_weight: 0.2
+  gradient_accumulation: 1
+  # FP16 overflows in the cosine-prototype branch and can skip optimizer steps.
+  amp: false
+  print_period: 50
+  checkpoint_period: 10000
+  eval_period: 10000

@@ -1,0 +1,26 @@
+experiment:
+  output_root: ../../../outputs/road
+  seed: 0
+model:
+  type: native_r101
+  pretrained: ../../../pretrained/resnet101_v2.pth
+  freeze_stem: true
+  prototype_scale: 20.0
+train:
+  max_iters: 40000
+  crop_size: [1024, 1024]
+  scale_range: [0.5, 2.0]
+  flip_probability: 0.5
+  color_jitter: 0.2
+  blur_probability: 0.5
+  workers: 4
+  base_lr: 0.001
+  momentum: 0.9
+  weight_decay: 0.0001
+  power: 0.9
+  support_loss_weight: 0.2
+  gradient_accumulation: 1
+  amp: false
+  print_period: 50
+  checkpoint_period: 10000
+  eval_period: 10000

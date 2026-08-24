@@ -35,3 +35,12 @@ Run the testDIP.py, which reads the class prototypes from the local pt file, and
 The pre-trained VGG ResNet can be downloaded at 
 https://pan.baidu.com/s/1FwpcZQ3MPBrm8OvQT7N93Q?pwd=neey 
 
+## Reproducible road-scene benchmark
+
+The official scripts above are retained unchanged. A standalone, configurable
+adaptation for GTA5-to-Cityscapes, SYNTHIA-to-Cityscapes,
+Cityscapes-to-ACDC, Cityscapes-to-MUSES, and Cityscapes-to-Mapillary is under
+`road_dip/`, with both the native ResNet-101 encoder and a
+DINOv3-B + ReIN + HRDA encoder. See [docs/road_experiments.md](docs/road_experiments.md)
+for protocol notes and commands.
+
