@@ -1,6 +1,6 @@
 base: ../_base_/native.yaml
 experiment:
-  name: dip_native_r101_gta2cityscapes_1_64
+  name: dip_native_r101_gta2cityscapes_random_1_64
   task: gta2cityscapes
 data:
   source_root: ../../../data/gtav
@@ -8,7 +8,7 @@ data:
   source_kind: gta
   source_label_space: trainid
   support_root: ../../../data/cityscapes
-  support_list: ../../../lists/road/gta2cityscapes_1_64_support.txt
+  support_list: ../../../lists/road/cityscapes_1_64_random_support.txt
   support_kind: paired
   support_label_space: trainid
   val_root: ../../../data/cityscapes
@@ -17,4 +17,7 @@ data:
   val_label_space: trainid
   prototype_resize: [1024, 2048]
   eval_resize: [1024, 2048]
-
+train:
+  max_iters: 499280
+  checkpoint_period: 124820
+  eval_period: 124820

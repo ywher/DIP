@@ -143,12 +143,14 @@ class JointTrainTransform:
         self,
         crop_size: Sequence[int],
         scale_range: Sequence[float] = (0.5, 2.0),
+        rotate_range: Sequence[float] = (0.0, 0.0),
         flip_probability: float = 0.5,
         color_jitter: float = 0.2,
         blur_probability: float = 0.5,
     ):
         self.crop_h, self.crop_w = (int(crop_size[0]), int(crop_size[1]))
         self.scale_min, self.scale_max = map(float, scale_range)
+        self.rotate_min, self.rotate_max = map(float, rotate_range)
         self.flip_probability = float(flip_probability)
         self.color_jitter = float(color_jitter)
         self.blur_probability = float(blur_probability)
@@ -159,6 +161,25 @@ class JointTrainTransform:
         new_h = max(1, int(round(image.height * scale)))
         image = image.resize((new_w, new_h), Image.Resampling.BILINEAR)
         label = label.resize((new_w, new_h), Image.Resampling.NEAREST)
+
+        if self.rotate_min != 0 or self.rotate_max != 0:
+            angle = random.uniform(self.rotate_min, self.rotate_max)
+            image = image.rotate(
+                angle,
+                resample=Image.Resampling.BILINEAR,
+                fillcolor=(124, 116, 104),
+            )
+            label = label.rotate(
+                angle,
+                resample=Image.Resampling.NEAREST,
+                fillcolor=IGNORE_LABEL,
+            )
+
+        if random.random() < self.blur_probability:
+            image = image.filter(ImageFilter.GaussianBlur(radius=random.uniform(0.1, 1.5)))
+        if random.random() < self.flip_probability:
+            image = ImageOps.mirror(image)
+            label = ImageOps.mirror(label)
 
         pad_w = max(0, self.crop_w - new_w)
         pad_h = max(0, self.crop_h - new_h)
@@ -173,17 +194,11 @@ class JointTrainTransform:
         box = (x0, y0, x0 + self.crop_w, y0 + self.crop_h)
         image, label = image.crop(box), label.crop(box)
 
-        if random.random() < self.flip_probability:
-            image = ImageOps.mirror(image)
-            label = ImageOps.mirror(label)
-
         if self.color_jitter > 0:
             strength = self.color_jitter
             image = ImageEnhance.Brightness(image).enhance(random.uniform(1 - strength, 1 + strength))
             image = ImageEnhance.Contrast(image).enhance(random.uniform(1 - strength, 1 + strength))
             image = ImageEnhance.Color(image).enhance(random.uniform(1 - strength, 1 + strength))
-        if random.random() < self.blur_probability:
-            image = image.filter(ImageFilter.GaussianBlur(radius=random.uniform(0.1, 1.5)))
         return image_to_tensor(image), torch.from_numpy(np.asarray(label, dtype=np.int64).copy())
 
 
@@ -248,32 +263,50 @@ class DIPPairDataset(Dataset):
 
     def __getitem__(self, index: int) -> dict:
         del index
-        source_record = random.choice(self.source)
-        source_image, source_label = load_image_label(source_record, self.source_label_space)
-        source_image, source_label = self.transform(source_image, source_label)
-        source_classes = _present_classes(source_label, self.classes)
+        source_best = None
+        for _ in range(self.max_pair_attempts):
+            source_record = random.choice(self.source)
+            source_image, source_label = load_image_label(
+                source_record, self.source_label_space
+            )
+            source_image, source_label = self.transform(source_image, source_label)
+            source_classes = _present_classes(source_label, self.classes)
+            if source_best is None or len(source_classes) > len(source_best[-1]):
+                source_best = source_record, source_image, source_label, source_classes
+            if len(source_classes) >= self.min_shared_classes:
+                break
+        if source_best is None:
+            raise RuntimeError("Unable to sample a source image")
+        source_record, source_image, source_label, _ = source_best
 
-        best = None
+        support_best = None
         for _ in range(self.max_pair_attempts):
             support_record = random.choice(self.support)
             support_image, support_label = load_image_label(support_record, self.support_label_space)
             support_image, support_label = self.transform(support_image, support_label)
-            shared = sorted(source_classes.intersection(_present_classes(support_label, self.classes)))
-            if best is None or len(shared) > len(best[-1]):
-                best = (support_record, support_image, support_label, shared)
-            if len(shared) >= self.min_shared_classes:
+            episode_classes = sorted(_present_classes(support_label, self.classes))
+            if support_best is None or len(episode_classes) > len(support_best[-1]):
+                support_best = (
+                    support_record,
+                    support_image,
+                    support_label,
+                    episode_classes,
+                )
+            if len(episode_classes) >= self.min_shared_classes:
                 break
 
-        if best is None or not best[-1]:
-            raise RuntimeError(f"No shared class found for source sample {source_record.name}")
-        support_record, support_image, support_label, shared = best
-        source_pair, support_pair = remap_pair_labels(source_label, support_label, shared)
+        if support_best is None or len(support_best[-1]) < self.min_shared_classes:
+            raise RuntimeError("No support image with enough valid classes was found")
+        support_record, support_image, support_label, episode_classes = support_best
+        source_pair, support_pair = remap_pair_labels(
+            source_label, support_label, episode_classes
+        )
         return {
             "source_image": source_image,
             "source_label": source_pair,
             "support_image": support_image,
             "support_label": support_pair,
-            "shared_classes": torch.tensor(shared, dtype=torch.long),
+            "episode_classes": torch.tensor(episode_classes, dtype=torch.long),
             "source_name": source_record.name,
             "support_name": support_record.name,
         }

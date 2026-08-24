@@ -7,11 +7,12 @@ model:
   freeze_stem: true
   prototype_scale: 20.0
 train:
-  max_iters: 40000
-  crop_size: [1024, 1024]
-  scale_range: [0.5, 2.0]
+  max_iters: 59500
+  crop_size: [1025, 1025]
+  scale_range: [0.9, 1.1]
+  rotate_range: [-10.0, 10.0]
   flip_probability: 0.5
-  color_jitter: 0.2
+  color_jitter: 0.0
   blur_probability: 0.5
   workers: 4
   base_lr: 0.001
@@ -22,5 +23,5 @@ train:
   gradient_accumulation: 1
   amp: false
   print_period: 50
-  checkpoint_period: 10000
-  eval_period: 10000
+  checkpoint_period: 14875
+  eval_period: 14875

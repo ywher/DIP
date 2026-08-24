@@ -26,6 +26,12 @@ class RoadDIPTests(unittest.TestCase):
         self.assertEqual(source_out.tolist(), [[255, 0, 1, 255]])
         self.assertEqual(support_out.tolist(), [[1, 0, 255, 255]])
 
+        # DIP defines the episode from support classes, including a class that
+        # may be absent from the current source query.
+        source_out, support_out = remap_pair_labels(source, support, [2, 7, 8])
+        self.assertEqual(source_out.tolist(), [[255, 0, 2, 255]])
+        self.assertEqual(support_out.tolist(), [[2, 0, 1, 255]])
+
     def test_prototype_classifier_and_bank_ignore_absent_classes(self):
         features = torch.tensor([[[[1.0, 1.0]], [[0.0, 0.0]]]])
         labels = torch.tensor([[[0, 0]]])
@@ -34,9 +40,15 @@ class RoadDIPTests(unittest.TestCase):
         self.assertEqual(prototypes.shape, (1, 2))
         self.assertEqual(logits.shape, (1, 1, 1, 2))
 
-        bank = PrototypeBank.empty([0, 1], feature_dim=2, device=torch.device("cpu"))
+        bank = PrototypeBank.empty(
+            [0, 1], feature_dim=2, device=torch.device("cpu"), max_shots=2
+        )
         bank.update(features, labels)
+        bank.update(features * 3, labels)
+        bank.update(features * 10, labels)
         self.assertEqual(bank.valid.tolist(), [True, False])
+        self.assertEqual(bank.counts.tolist(), [2.0, 0.0])
+        self.assertTrue(torch.allclose(bank.prototypes[0], torch.tensor([2.0, 0.0])))
 
 
 if __name__ == "__main__":

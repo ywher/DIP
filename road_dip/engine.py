@@ -77,7 +77,12 @@ def build_prototype_bank(model, config: dict, device: torch.device) -> Prototype
         pin_memory=True,
     )
     classes = canonical_classes(config["experiment"]["task"])
-    bank = PrototypeBank.empty(classes, model.feature_dim, device)
+    bank = PrototypeBank.empty(
+        classes,
+        model.feature_dim,
+        device,
+        max_shots=int(config["data"].get("prototype_shots", 5)),
+    )
     model.eval()
     with torch.no_grad():
         for index, batch in enumerate(loader, start=1):
@@ -87,6 +92,9 @@ def build_prototype_bank(model, config: dict, device: torch.device) -> Prototype
             bank.update(features, labels)
             if index % 20 == 0 or index == len(loader):
                 LOGGER.info("Prototype extraction %d/%d", index, len(loader))
+            if bool(bank.complete.all()):
+                LOGGER.info("Collected %d prototypes for every class", bank.max_shots)
+                break
     missing = bank.class_ids[~bank.valid].tolist()
     if missing:
         LOGGER.warning("No support pixels for canonical classes: %s", missing)
@@ -173,6 +181,7 @@ def train(config: dict, resume: str | None = None) -> Path:
     transform = JointTrainTransform(
         crop_size=train_cfg["crop_size"],
         scale_range=train_cfg.get("scale_range", [0.5, 2.0]),
+        rotate_range=train_cfg.get("rotate_range", [0.0, 0.0]),
         flip_probability=train_cfg.get("flip_probability", 0.5),
         color_jitter=train_cfg.get("color_jitter", 0.2),
         blur_probability=train_cfg.get("blur_probability", 0.5),
@@ -223,7 +232,8 @@ def train(config: dict, resume: str | None = None) -> Path:
         source_label = batch["source_label"].unsqueeze(0).to(device, non_blocking=True)
         support_label = batch["support_label"].unsqueeze(0).to(device, non_blocking=True)
         images = torch.cat([source_image, support_image], dim=0)
-        pair_classes = torch.arange(len(batch["shared_classes"]), device=device)
+        episode_classes = batch["episode_classes"]
+        pair_classes = torch.arange(len(episode_classes), device=device)
 
         with torch.cuda.amp.autocast(enabled=use_amp):
             embeddings = model.extract_embeddings(images)
@@ -261,7 +271,7 @@ def train(config: dict, resume: str | None = None) -> Path:
             speed = elapsed / max(1, iteration - start_iteration)
             eta = speed * (max_iters - iteration)
             LOGGER.info(
-                "iter %d/%d | loss %.4f | shared %d | lr %.2e | ETA %.1f h",
+                "iter %d/%d | loss %.4f | classes %d | lr %.2e | ETA %.1f h",
                 iteration,
                 max_iters,
                 running_loss / (1 if iteration == 1 else print_period),

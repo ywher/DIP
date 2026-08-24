@@ -31,16 +31,18 @@ The new `road_dip` harness leaves those files unchanged and provides:
 - a standalone DINOv3-B + ReIN + HRDA dense embedding encoder (`vfm`);
 - the original DIP masked-average prototypes and cosine classifier;
 - checkpointing, prototype extraction, validation, mIoU, ETA, and resume;
-- matched image-level target support lists at 1/64 (1/128 for Mapillary).
+- random image-level target support lists at 1/64 (1/128 for Mapillary),
+  matched to the `UniMatchV2+Source` SSDA protocol.
 
 ## Protocol boundary
 
-DIP is an adaptation method, not an acquisition method. Its official
-Cityscapes one-/five-shot files are manually assembled support sets. The road
-configs therefore use the same labeled target-image manifests as TC-ADA so
-that the experiment isolates the adaptation model under a matched annotation
-set. Report these rows as **DIP with a matched image split**, not as a native
-DIP acquisition result.
+DIP is a semi-supervised domain adaptation method, not an acquisition method.
+Its official one-/five-shot support sets are assumed to be given. The default
+road configs therefore use the same random labeled-target manifests as
+`UniMatchV2+Source`. Report DIP in the SSDA group with query unit/rounds marked
+as not applicable. The retained `*_rdkc_support.txt` files permit an optional
+matched-selection control, but that result inherits TC-ADA's acquisition and
+must be labeled **DIP (matched R-DKC split)**.
 
 The VFM profile preserves DIP's training objective. DINOv3-B + ReIN + HRDA
 produces a dense 256-D embedding; target support masks form class prototypes,
@@ -92,8 +94,9 @@ bash scripts/run_five_road_tasks.sh native 0
 bash scripts/run_five_road_tasks.sh vfm 0
 ```
 
-The default road protocol uses 40k iterations and one source--support pair
+The controlled VFM protocol uses 40k iterations and one source--support pair
 (two images) per step, with checkpoints and validation every 10k iterations
-and the same 1024x1024 crop used by the controlled VFM comparisons. Training
-uses FP32: FP16 gradient scaling overflows in the cosine-prototype branch and
-can silently skip optimizer updates.
+and the same 1024x1024 crop used by the other VFM comparisons. Training uses
+FP32: FP16 gradient scaling overflows in the cosine-prototype branch and can
+silently skip optimizer updates. The native profile follows the optimizer and
+epoch-level settings of the official R101 configuration separately.

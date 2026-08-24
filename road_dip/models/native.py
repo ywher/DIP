@@ -110,9 +110,6 @@ class NativeDIPEncoder(nn.Module):
 
     def train(self, mode: bool = True):
         super().train(mode)
-        if not any(parameter.requires_grad for parameter in self.layer0.parameters()):
-            self.layer0.eval()
-            self.layer1.eval()
         return self
 
     def extract_embeddings(self, images: torch.Tensor) -> torch.Tensor:
