@@ -92,7 +92,12 @@ Run all five tasks sequentially on one GPU:
 ```bash
 bash scripts/run_five_road_tasks.sh native 0
 bash scripts/run_five_road_tasks.sh vfm 0
+bash scripts/run_five_road_tasks.sh vfm_rdkc 0
 ```
+
+The `vfm_rdkc` profile is a matched-selection diagnostic: it changes only the
+target support manifests to TC-ADA's R-DKC selections. Report it as
+**DIP (matched R-DKC split)** rather than as the native DIP protocol.
 
 The controlled VFM protocol uses 40k iterations and one source--support pair
 (two images) per step, with checkpoints and validation every 10k iterations

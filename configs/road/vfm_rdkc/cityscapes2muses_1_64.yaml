@@ -1,0 +1,6 @@
+base: ../vfm/cityscapes2muses_1_64.yaml
+experiment:
+  name: dip_dinov3b_rein_hrda_cityscapes2muses_rdkc_1_64
+data:
+  support_list: ../../../lists/road/cityscapes2muses_1_64_rdkc_support.txt
+

@@ -1,0 +1,6 @@
+base: ../vfm/cityscapes2mapillary_1_128.yaml
+experiment:
+  name: dip_dinov3b_rein_hrda_cityscapes2mapillary_rdkc_1_128
+data:
+  support_list: ../../../lists/road/cityscapes2mapillary_1_128_rdkc_support.txt
+
