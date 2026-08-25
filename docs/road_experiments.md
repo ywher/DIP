@@ -93,6 +93,7 @@ Run all five tasks sequentially on one GPU:
 bash scripts/run_five_road_tasks.sh native 0
 bash scripts/run_five_road_tasks.sh vfm 0
 bash scripts/run_five_road_tasks.sh vfm_rdkc 0
+bash scripts/run_five_road_tasks.sh native_rdkc 0
 ```
 
 The `vfm_rdkc` profile is a matched-selection diagnostic: it changes only the

@@ -1,0 +1,5 @@
+base: ../native/cityscapes2mapillary_1_128.yaml
+experiment:
+  name: dip_native_r101_cityscapes2mapillary_rdkc_1_128
+data:
+  support_list: ../../../lists/road/cityscapes2mapillary_1_128_rdkc_support.txt

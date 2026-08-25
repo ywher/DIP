@@ -3,8 +3,8 @@ set -euo pipefail
 
 profile="${1:-vfm}"
 gpu="${2:-0}"
-if [[ "${profile}" != "vfm" && "${profile}" != "vfm_rdkc" && "${profile}" != "native" ]]; then
-  echo "Profile must be native, vfm, or vfm_rdkc" >&2
+if [[ "${profile}" != "vfm" && "${profile}" != "vfm_rdkc" && "${profile}" != "native" && "${profile}" != "native_rdkc" ]]; then
+  echo "Profile must be native, native_rdkc, vfm, or vfm_rdkc" >&2
   exit 2
 fi
 
